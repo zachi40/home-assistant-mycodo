@@ -1,7 +1,14 @@
 {
   "name": "Mycodo App Integration",
+  "content_in_root": false,
+  "domains": [
+    "sensor",
+    "switch",
+  ],
   "hacs": "1.6.0",
   "homeassistant": "2021.12.0",
-  "filename": "flichub.zip",
-  "render_readme: true
+  "render_readme": true
+  "filename": "custom_components/mycodo_app/__init__.py",
+  "zip_release": true,
+  "manifest_version": 1
 }

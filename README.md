@@ -30,17 +30,20 @@ To integrate your Mycodo App with Home Assistant, you need an API token. Follow 
 5. In the "Users" section, click on the "Generate API Key" button.
 6. Copy the generated token and keep it secure.
 
-![Generate API Key](path/to/your/image.png)
 <img
   src='images/get_token.png'
-  alt='Confirmation of host.'
-  width='477pt'
+  width='1000pt'
 />
+
 Once you have the token, you can configure the integration in Home Assistant by providing the token during the setup process.
 
 ## Configuration
 1. In Home Assistant, go to "Configuration" -> "Integrations".
-2. Select "Mycodo App" and enter the API token you obtained earlier.
+2. Select "Mycodo App" and enter the following details:
+   - **IP Address**: Enter the IP address of your Mycodo App.
+   - **API Token**: Enter the API token you obtained earlier.
+   - **App Name**: Enter a name for your Mycodo App.
+   - **Protocol**: Select whether your app uses `HTTP` or `HTTPS` (default is `HTTPS`).
 3. Complete the configuration by following the on-screen instructions.
 
 For more detailed instructions, refer to the documentation in this repository.
@@ -49,5 +52,3 @@ For more detailed instructions, refer to the documentation in this repository.
 If you encounter any issues or have questions, please open an issue in this repository or contact the maintainers.
 
 ---
-
-Happy automating with Mycodo and Home Assistant!
