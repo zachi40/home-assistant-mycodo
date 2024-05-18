@@ -1,6 +1,7 @@
 {
     "domain": "mycodo",
     "name": "MyCodo App",
+    "version": "1.0",
     "config_flow": true,
     "dependencies": [],
     "codeowners": ["@zachi40"],
@@ -8,6 +9,5 @@
     "requirements": ["requests>=2.25.1"],
     "documentation": "https://github.com/zachi40/home-assistant-mycodo",
     "iot_class": "local_polling",
-    "issue_tracker": "https://github.com/zachi40/home-assistant-mycodo/issues",
-    "version": "1.0"
+    "issue_tracker": "https://github.com/zachi40/home-assistant-mycodo/issues"
 }
