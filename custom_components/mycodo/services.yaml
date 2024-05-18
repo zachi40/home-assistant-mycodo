@@ -1,6 +1,0 @@
-my_service:
-  description: "A service to do something special with Mycodo."
-  fields:
-    name:
-      description: "Name of the entity."
-      example: "sensor.mycodo_sensor"
