@@ -1,13 +1,12 @@
 {
-    "domain": "mycodo",
-    "name": "MyCodo App",
-    "codeowners": ["@zachi40"],
-    "config_flow": true,
-    "dependencies": [],
-    "documentation": "https://github.com/zachi40/home-assistant-mycodo",    
-    "issue_tracker": "https://github.com/zachi40/home-assistant-mycodo/issues",
-    "iot_class": "local_polling",
-    "loggers": ["mycodo"],
-    "requirements": ["requests>=2.25.1"],
-    "version": "1.0"
+  "domain": "mycodo",
+  "name": "MyCodo App",
+  "codeowners": ["@zachi40"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/zachi40/home-assistant-mycodo",
+  "iot_class": "local_polling",
+  "requirements": ["requests>=2.25.1"],
+  "version": "1.0"
+
 }
