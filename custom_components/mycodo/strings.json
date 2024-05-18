@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Mycodo",
+        "description": "Enter the details to connect to your Mycodo instance.",
+        "data": {
+          "name": "Instance Name",
+          "ip_address": "IP Address",
+          "api_key": "API Key",
+          "use_https": "Use HTTPS (Uncheck for HTTP)"
+        }
+      }
+    },
+    "error": {
+      "ip_not_reachable": "Could not connect to the provided IP address. Please check if the device is online and the IP is correct.",
+      "invalid_api_key": "The provided API key is invalid or the Mycodo instance did not respond correctly. Please verify your API key and ensure that Mycodo is running."
+    },
+    "abort": {
+      "already_configured": "This Mycodo instance is already configured.",
+      "unknown_error": "An unknown error occurred while setting up the Mycodo integration."
+    }
+  }
+}
