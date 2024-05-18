@@ -1,3 +1,8 @@
+{% if prerelease %}
+### NB!: This is a Beta version!
+{% endif %}
+
+
 # Mycodo App Integration
 
 This integration allows you to connect and control your Mycodo App with Home Assistant.
@@ -7,6 +12,7 @@ This integration allows you to connect and control your Mycodo App with Home Ass
 - Control devices connected to Mycodo
 - Automate tasks using Home Assistant automations
 
+{% if not installed %}
 ## Installation
 
 ### Install with HACS (Recommended)
@@ -23,7 +29,7 @@ This integration allows you to connect and control your Mycodo App with Home Ass
 6. Restart Home Assistant.
 7. In the Home Assistant UI, go to "Configuration" -> "Integrations" and click "+" to add a new integration.
 8. Search for "Mycodo App" and follow the on-screen instructions.
-
+{% endif %}
 ## Configuration
 1. In Home Assistant, go to "Configuration" -> "Integrations".
 2. Select "Mycodo App" and enter the following details:
