@@ -1,13 +1,22 @@
 import logging
 import voluptuous as vol
 import aiohttp
-
-from homeassistant.helpers.aiohttp_client import async_get_clientsession  # Updated import
 from homeassistant import config_entries
 from homeassistant.core import callback
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .const import DOMAIN, CONF_NAME, CONF_IP_ADDRESS, CONF_API_KEY, CONF_USE_HTTPS
 
 _LOGGER: logging.Logger = logging.getLogger(__package__)
+
+# Configuration schema
+CONFIG_SCHEMA = vol.Schema({
+    vol.Required(CONF_NAME): cv.string,
+    vol.Required(CONF_IP_ADDRESS): cv.string,
+    vol.Required(CONF_API_KEY): cv.string,
+    vol.Optional(CONF_USE_HTTPS, default=True): cv.boolean,
+})
+
 class MycodoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
@@ -54,13 +63,13 @@ class MycodoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             user_input = {}
 
         return self.async_show_form(
-            step_id="user", 
+            step_id="user",
             data_schema=vol.Schema({
                 vol.Required(CONF_NAME, default=user_input.get(CONF_NAME, "")): str,
                 vol.Required(CONF_IP_ADDRESS, default=user_input.get(CONF_IP_ADDRESS, "")): str,
                 vol.Required(CONF_API_KEY, default=user_input.get(CONF_API_KEY, "")): str,
                 vol.Required(CONF_USE_HTTPS, default=user_input.get(CONF_USE_HTTPS, True)): bool
-            }), 
+            }),
             errors=self._errors,
             description_placeholders={
                 "name_description": "The name you want to give this Mycodo instance.",
@@ -75,7 +84,6 @@ class MycodoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             session = async_get_clientsession(self.hass)
             async with session.head(f"{protocol}://{ip}/", timeout=5, ssl=False) as response:
                 _LOGGER.info(f"Checking IP live: {protocol}://{ip} - Status code: {response.status}")
-                # Check for both 200 OK and 302 Found status codes
                 return response.status in (200, 302)
         except aiohttp.ClientError as e:
             _LOGGER.error(f"Error checking IP: {e}")
@@ -89,7 +97,6 @@ class MycodoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             session = async_get_clientsession(self.hass)
             async with session.get(f"{protocol}://{ip}/api/settings/users", headers=http_headers, timeout=10, ssl=False) as response:
                 _LOGGER.info(f"Checking API Key: {protocol}://{ip}/api/settings/users - Status code: {response.status}")
-                # Check for both 200 OK and 302 Found status codes
                 return response.status in (200, 302)
         except aiohttp.ClientError as e:
             _LOGGER.error(f"Error checking API Key: {e}")
