@@ -1,14 +1,9 @@
 {
   "name": "Mycodo App Integration",
-  "content_in_root": false,
-  "domains": [
-    "sensor",
-    "switch",
-  ],
   "hacs": "1.6.0",
   "homeassistant": "2021.12.0",
   "render_readme": true
-  "filename": "custom_components/mycodo_app/__init__.py",
+  "filename": "mycodo .zip",
   "zip_release": true,
   "manifest_version": 1
 }
