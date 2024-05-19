@@ -18,7 +18,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     switches_states = switches.get("output states", [])
 
     switch_entities = []
-    for switch in switches["output devices"]:
+    output_devices = switches.get("output devices", []) or []
+    for switch in output_devices:
         state = switches_states.get(switch["unique_id"])
         switch_entities.append(
             MycodoSwitch(

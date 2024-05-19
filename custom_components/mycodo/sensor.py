@@ -20,7 +20,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         return
 
     sensor_entities = []
-    for sensor in sensors["input settings"]:
+    input_settings = sensors.get("input settings", []) or []
+    for sensor in input_settings:
         if sensor.get("is_activated"):
             # Fetch detailed sensor information
             details = await hass.async_add_executor_job(
@@ -38,7 +39,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 # unit = device_measurements["unit"]
                 # if unit == "C":
                 #     unit = TEMP_CELSIUS
-                unit = mycodo_client.process_device_measurements(device_measurements)
+                unit = device_measurements.get("unit", "C")
                 device_class = device_measurements["measurement"]
 
                 data = await hass.async_add_executor_job(
@@ -103,7 +104,14 @@ class MycodoSensor(Entity):
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement."""
-        return self._unit_of_measurement
+        unit = self._unit_of_measurement
+        if unit == "C":
+            return TEMP_CELSIUS
+        elif unit == "F":
+            return TEMP_FAHRENHEIT
+        elif unit == "K":
+            return TEMP_KELVIN
+        return unit
 
     @property
     def device_class(self):

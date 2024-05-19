@@ -1,6 +1,5 @@
 import requests
 import logging
-from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT, TEMP_KELVIN
 
 _LOGGER = logging.getLogger(__name__)
 # Disable SSL warnings (for self-signed certificates)
@@ -72,16 +71,3 @@ class MycodoClient:
             method="post",
             data={"channel": 0, "duration": 0, "state": state},
         )
-
-    # Function or part of your code where you process device measurements
-    def process_device_measurements(self, device_measurements):
-        # Dictionary to simulate switch-case for unit conversion
-        unit_conversion = {"C": TEMP_CELSIUS, "F": TEMP_FAHRENHEIT, "K": TEMP_KELVIN}
-
-        # Get unit from the device measurements
-        unit = device_measurements.get("unit", "Unknown Unit")
-
-        # Convert unit using the dictionary method
-        converted_unit = unit_conversion.get(unit, unit)
-
-        return converted_unit
