@@ -1,5 +1,5 @@
 {
-  "domain": "mycodo",
+  "domain": "mycodo_app",
   "name": "MyCodo App",
   "codeowners": ["@zachi40"],
   "config_flow": true,
