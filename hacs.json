@@ -3,6 +3,5 @@
   "hacs": "1.6.0",
   "homeassistant": "2021.12.0",
   "render_readme": true,
-  /*"filename": "mycodo.zip",*/
   "zip_release": true
 }
