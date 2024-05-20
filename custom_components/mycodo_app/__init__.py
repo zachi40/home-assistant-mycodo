@@ -28,7 +28,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     # # Create a Mycodo client and save it in hass.data
     # hass.data[DOMAIN]["client"] = MycodoClient(base_url=base_url, api_key=api_key)
     hass.data[DOMAIN]["client"] = MycodoClient(
-        base_url=f"{'http' if entry.data[CONF_USE_HTTPS] else 'https'}://{entry.data[CONF_IP_ADDRESS]}",
+        base_url=f"{'https' if entry.data[CONF_USE_HTTPS] else 'http'}://{entry.data[CONF_IP_ADDRESS]}",
         api_key=entry.data[CONF_API_KEY],
     )
 

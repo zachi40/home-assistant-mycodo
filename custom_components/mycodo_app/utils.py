@@ -67,7 +67,7 @@ class MycodoClient:
     def set_switch_state(self, switch_id, state):
         """Set the state of a switch."""
         return self.make_request(
-            f"api/outputs/{switch_id}",
+            endpoint=f"api/outputs/{switch_id}",
             method="post",
-            data={"channel": 0, "duration": 0, "state": state},
+            data={"channel": 0, "state": state},
         )
