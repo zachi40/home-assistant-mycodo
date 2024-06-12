@@ -52,9 +52,18 @@ class MycodoClient:
         """Get detailed information for a specific sensor from Mycodo."""
         return self.make_request(f"api/inputs/{sensor_id}")
 
-    def get_sensor_data(self, sensor_id):
+     def get_sensor_data(self, sensor_id):
+        NOT_value = True
         """Get the latest data for a specific sensor from Mycodo."""
-        return self.make_request(f"api/measurements/last/{sensor_id}/C/0/30")
+        respose = self.make_request(f"api/measurements/last/{sensor_id}/C/0/30")
+        while NOT_value:
+            if not respose.get("value"):
+                random_number = random.randint(10, 60)
+                respose = self.make_request(
+                    f"api/measurements/last/{sensor_id}/C/0/{random_number}"
+                )
+            else:
+                return respose
 
     def get_switches(self):
         """Get switches from Mycodo."""
