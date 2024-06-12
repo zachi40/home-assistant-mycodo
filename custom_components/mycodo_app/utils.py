@@ -52,9 +52,9 @@ class MycodoClient:
         """Get detailed information for a specific sensor from Mycodo."""
         return self.make_request(f"api/inputs/{sensor_id}")
 
-     def get_sensor_data(self, sensor_id):
-        NOT_value = True
+    def get_sensor_data(self, sensor_id):
         """Get the latest data for a specific sensor from Mycodo."""
+        NOT_value = True
         respose = self.make_request(f"api/measurements/last/{sensor_id}/C/0/30")
         while NOT_value:
             if not respose.get("value"):
