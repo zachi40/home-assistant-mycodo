@@ -1,5 +1,6 @@
 import requests
 import logging
+import random
 
 _LOGGER = logging.getLogger(__name__)
 # Disable SSL warnings (for self-signed certificates)
@@ -52,15 +53,15 @@ class MycodoClient:
         """Get detailed information for a specific sensor from Mycodo."""
         return self.make_request(f"api/inputs/{sensor_id}")
 
-    def get_sensor_data(self, sensor_id):
-        """Get the latest data for a specific sensor from Mycodo."""
+    def get_sensor_data(self, sensor_id, unit):
         NOT_value = True
-        respose = self.make_request(f"api/measurements/last/{sensor_id}/C/0/30")
+        """Get the latest data for a specific sensor from Mycodo."""
+        respose = self.make_request(f"api/measurements/last/{sensor_id}/{unit}/0/30")
         while NOT_value:
-            if not respose.get("value"):
+            if respose.get("value") == None:
                 random_number = random.randint(10, 60)
                 respose = self.make_request(
-                    f"api/measurements/last/{sensor_id}/C/0/{random_number}"
+                    f"api/measurements/last/{sensor_id}/{unit}/0/{random_number}"
                 )
             else:
                 return respose

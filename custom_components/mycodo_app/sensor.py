@@ -36,14 +36,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             try:
                 # Attempt to extract necessary measurement details
                 device_measurements = details["device measurements"][0]
-                # unit = device_measurements["unit"]
-                # if unit == "C":
-                #     unit = TEMP_CELSIUS
-                unit = device_measurements.get("unit", "C")
+                unit = device_measurements.get("unit", "")
                 device_class = device_measurements["measurement"]
 
                 data = await hass.async_add_executor_job(
-                    mycodo_client.get_sensor_data, sensor["unique_id"]
+                    mycodo_client.get_sensor_data, sensor["unique_id"], unit
                 )
                 if data:
                     state = data.get("value")
@@ -82,6 +79,7 @@ class MycodoSensor(Entity):
         self._name = f"Mycodo {name}"
         self._unique_id = unique_id
         self._unit_of_measurement = unit_of_measurement
+        self._unit = unit_of_measurement
         self._device_class = device_class
 
         self._state = state
@@ -114,6 +112,11 @@ class MycodoSensor(Entity):
         return unit
 
     @property
+    def unit(self):
+        """Return the unit of the sensor."""
+        return self._unit
+
+    @property
     def device_class(self):
         """Return the device class of the sensor."""
         return self._device_class
@@ -121,7 +124,7 @@ class MycodoSensor(Entity):
     async def async_update(self):
         """Fetch new state data for the sensor."""
         data = await self.hass.async_add_executor_job(
-            self.mycodo_client.get_sensor_data, self._unique_id
+            self.mycodo_client.get_sensor_data, self._unique_id, self._unit
         )
         if data:
             self._state = data.get("value")
