@@ -35,32 +35,39 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
             try:
                 # Attempt to extract necessary measurement details
-                device_measurements = details["device measurements"][0]
-                unit = device_measurements.get("unit", "")
-                device_class = device_measurements["measurement"]
+                for device in details["device measurements"]:
+                    # device_measurements = details["device measurements"][0]
+                    unit = device.get("unit", "")
+                    device_class = device.get("measurement", "")
 
-                data = await hass.async_add_executor_job(
-                    mycodo_client.get_sensor_data, sensor["unique_id"], unit
-                )
-                if data:
-                    state = data.get("value")
-                    if state is not None:
-                        state = "{:.2f}".format(float(state))
-                else:
-                    _LOGGER.error(
-                        f"Failed to update sensor ID {sensor["unique_id"]} sensor"
-                    )
+                    channel = device.get("channel", "")
 
-                sensor_entities.append(
-                    MycodoSensor(
-                        mycodo_client,
-                        sensor["name"],
-                        sensor["unique_id"],
-                        unit,
-                        device_class,
-                        state,
+                    data = await hass.async_add_executor_job(
+                        mycodo_client.get_sensor_data,
+                        device.get("device_id"),
+                        device.get("unique_id"),
                     )
-                )
+                    if data:
+                        state = data[1]
+                        if state is not None:
+                            state = "{:.2f}".format(float(state))
+                    else:
+                        _LOGGER.error(
+                            f"Failed to update sensor ID {sensor["unique_id"]} sensor"
+                        )
+
+                    sensor_entities.append(
+                        MycodoSensor(
+                            mycodo_client,
+                            sensor["name"],
+                            device.get("unique_id"),
+                            unit,
+                            device_class,
+                            channel,
+                            device.get("device_id"),
+                            state,
+                        )
+                    )
             except (IndexError, KeyError, TypeError) as e:
                 _LOGGER.error(f"Error processing sensor {sensor['name']} details: {e}")
                 continue
@@ -72,16 +79,25 @@ class MycodoSensor(Entity):
     """Representation of a Sensor from Mycodo."""
 
     def __init__(
-        self, mycodo_client, name, unique_id, unit_of_measurement, device_class, state
+        self,
+        mycodo_client,
+        name,
+        unique_id,
+        unit_of_measurement,
+        device_class,
+        channel,
+        device_id,
+        state,
     ):
         """Initialize the sensor."""
         self.mycodo_client = mycodo_client
-        self._name = f"Mycodo {name}"
+        self._name = f"Mycodo {name} {device_class}"
         self._unique_id = unique_id
         self._unit_of_measurement = unit_of_measurement
         self._unit = unit_of_measurement
+        self._channel = channel
         self._device_class = device_class
-
+        self._device_id = device_id
         self._state = state
 
     @property
@@ -109,7 +125,12 @@ class MycodoSensor(Entity):
             return TEMP_FAHRENHEIT
         elif unit == "K":
             return TEMP_KELVIN
-        return unit
+        elif unit == "percent":
+            return "%"
+        elif unit == "m_s":
+            return "m/s"
+        else:
+            return unit
 
     @property
     def unit(self):
@@ -121,13 +142,23 @@ class MycodoSensor(Entity):
         """Return the device class of the sensor."""
         return self._device_class
 
+    @property
+    def channel(self):
+        """Return the device channel of the sensor."""
+        return self._channel
+
+    @property
+    def channel(self):
+        """Return the device_id of the sensor."""
+        return self._device_id
+
     async def async_update(self):
         """Fetch new state data for the sensor."""
         data = await self.hass.async_add_executor_job(
-            self.mycodo_client.get_sensor_data, self._unique_id, self._unit
+            self.mycodo_client.get_sensor_data, self._device_id, self._unique_id
         )
         if data:
-            self._state = data.get("value")
+            self._state = data[1]
             if self._state is not None:
                 self._state = "{:.2f}".format(float(self._state))
             else:
