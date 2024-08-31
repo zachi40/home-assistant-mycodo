@@ -1,59 +1,46 @@
 import logging
+import uuid
+
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant
+from homeassistant.core import callback
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
+from .coordinator import MycodoApiCoordinator
+from .mycodo_entity import mycodoEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
     """Set up the Mycodo switches."""
-    mycodo_client = hass.data[DOMAIN]["client"]
-    switches = await hass.async_add_executor_job(mycodo_client.get_switches)
 
-    if not switches or "output devices" not in switches:
-        _LOGGER.error("Failed to fetch switches from Mycodo.")
-        return
+    coordinator: MycodoApiCoordinator = hass.data[DOMAIN][entry.entry_id]
+    entities: list[SwitchEntity] = []
+    for switch_dict in coordinator.data.get(Platform.SWITCH, {}):
+        switch_id = switch_dict.get("switch_id")
+        switch_data = switch_dict.get("switch_data")
 
-    switch_entities = []
-    output_devices = switches.get("output devices", [])
-    for switch in output_devices:
-        # get all channel from switch
-        switch_options = await hass.async_add_executor_job(
-            mycodo_client.get_switch, switch["unique_id"]
-        )
-        for output in switch_options.get("output device channels", []):
-            channel = output.get("channel")
-            output_id = output.get("output_id")
-            unique_id = output.get("unique_id")
-            name = f'{switch_options["output device"].get("name")} {output.get("name")}'
-            state = switch_options["output device channel states"].get(str(channel))
-            if state is None:
-                continue
-            switch_entities.append(
-                MycodoSwitch(
-                    mycodo_client,
-                    name,
-                    unique_id,
-                    output_id,
-                    channel,
-                    state == "on",
-                )
-            )
-
-    async_add_entities(switch_entities)
+        if switch_id and isinstance(switch_data, dict):
+            entities.append(MycodoSwitch(coordinator, switch_id, switch_data))
+    async_add_entities(entities)
 
 
-class MycodoSwitch(SwitchEntity):
-    """Representation of a Mycodo Switch."""
-
-    def __init__(self, mycodo_client, name, unique_id, output_id, channel, is_on):
+class MycodoSwitch(mycodoEntity, SwitchEntity):
+    def __init__(self, coordinator, switch_id, switch_data):
         """Initialize the switch."""
-        self._client = mycodo_client
-        self._name = f"Mycodo {name}"
-        self._unique_id = unique_id
-        self._output_id = output_id
-        self._channel = channel
-        self._state = is_on
+        super().__init__(coordinator)
+        self._coordinator = coordinator
+        self._client = self._coordinator._client
+        self._switch_id = switch_id
+
+        self._name = f'mycodo_{switch_data.get("name", "mycodo_Switch")}'
+        self._state = None
+        self._unique_id = switch_data.get("unique_id", str(uuid.uuid4()))
+        self._output_id = switch_data.get("output_id", str(uuid.uuid4()))
+        self._channel = switch_data.get("channel", 0)
 
     @property
     def name(self):
@@ -61,54 +48,44 @@ class MycodoSwitch(SwitchEntity):
         return self._name
 
     @property
+    def is_on(self):
+        """Return True if the switch is on."""
+        return self._state
+
+    @property
     def unique_id(self):
         """Return the unique ID of the switch."""
         return self._unique_id
 
-    @property
-    def output_id(self):
-        """Return the output ID of the switch."""
-        return self._output_id
-
-    @property
-    def channel(self):
-        """Return the channel of the switch."""
-        return self._channel
-
-    @property
-    def is_on(self):
-        """Return true if the switch is on."""
-        return self._state
-
-    async def async_turn_on(self, **kwargs):
-        """Turn the switch on."""
-        result = await self.hass.async_add_executor_job(
-            self._client.set_switch_state, self._output_id, self._channel, True
-        )
-        if result and "Success" in result.get("message", ""):
-            self._state = True
-            self.async_write_ha_state()
-        else:
-            _LOGGER.error(f"Failed to turn on {self._name}")
-
-    async def async_turn_off(self, **kwargs):
-        """Turn the switch off."""
-        result = await self.hass.async_add_executor_job(
-            self._client.set_switch_state, self._output_id, self._channel, False
-        )
-        if result and "Success" in result.get("message", ""):
+    async def async_turn_off(self):
+        """Turn the switch on using the Mycodo API client."""
+        try:
             self._state = False
-            self.async_write_ha_state()
-        else:
-            _LOGGER.error(f"Failed to turn off {self._name}")
+            await self._coordinator._client.set_switch_state(self._output_id, self._channel, self._state)
+            self.async_write_ha_state()  # Update Home Assistant state
+            _LOGGER.debug(f"Turned on switch {self._unique_id}")
+        except Exception as e:
+            _LOGGER.error(f"Failed to turn on switch {self._unique_id}: {e}")
+
+    async def async_turn_on(self):
+        """Turn the switch off using the Mycodo API client."""
+        try:
+            self._state = True
+            await self._coordinator._client.set_switch_state(self._output_id, self._channel, self._state)
+            self.async_write_ha_state()  # Update Home Assistant state
+            _LOGGER.debug(f"Turned off switch {self._unique_id}")
+        except Exception as e:
+            _LOGGER.error(f"Failed to turn off switch {self._unique_id}: {e}")
 
     async def async_update(self):
-        """Fetch new state data for the switch."""
-        result = await self.hass.async_add_executor_job(
-            self._client.get_switch, self._output_id
-        )
-        if result:
-            switch_state = result.get("output device channel states", [])
-            self._state = switch_state.get(str(self._channel), "off") == "on"
-        else:
-            _LOGGER.error(f"Failed to update {self._name}")
+        """Update the switch data."""
+        await self._coordinator.async_request_refresh()
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        latest_data = next((switch for switch in self._coordinator.data.get(Platform.SWITCH, []) if
+                            switch.get('switch_id') == self._unique_id), None)
+        if latest_data:
+            self._state =latest_data.get('switch_data', "").get('state', False)
+            _LOGGER.debug(f"Updated switch {self._output_id} state to {self._state}")
+            self.async_write_ha_state()

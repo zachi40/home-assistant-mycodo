@@ -5,10 +5,16 @@
         "title": "Connect to Mycodo",
         "description": "Enter the details to connect to your Mycodo instance.",
         "data": {
-          "name": "Instance Name",
           "ip_address": "IP Address",
           "api_key": "API Key",
-          "use_https": "Use HTTPS (Uncheck for HTTP)"
+          "use_https": "Use HTTPS",
+          "update_interval": "Update Interval"
+        },
+        "description_placeholders": {
+          "ip_address": "The IP address of your Mycodo instance.",
+          "api_key": "The API key for authenticating with Mycodo.",
+          "use_https": "Enable this to use HTTPS for a secure connection. Disable for HTTP.",
+          "update_interval": "Set how often (in minutes) the sensor should update."
         }
       }
     },

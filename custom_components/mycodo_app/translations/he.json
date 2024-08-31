@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "התחבר ל-Mycodo",
+        "description": "הזן את הפרטים כדי להתחבר למופע Mycodo שלך.",
+        "data": {
+          "ip_address": "כתובת IP",
+          "api_key": "מפתח API",
+          "use_https": "השתמש ב-HTTPS",
+          "update_interval": "מרווח עדכון"
+        },
+        "description_placeholders": {
+          "ip_address": "כתובת ה-IP של מופע Mycodo שלך.",
+          "api_key": "מפתח ה-API לאימות מול Mycodo.",
+          "use_https": "הפעל אפשרות זו כדי להשתמש ב-HTTPS עבור חיבור מאובטח. השבת עבור HTTP.",
+          "update_interval": "הגדר כל כמה זמן (בדקות) החיישן צריך להתעדכן."
+        }
+      }
+    },
+    "error": {
+      "ip_not_reachable": "לא ניתן להתחבר לכתובת ה-IP שסופקה. בדוק אם המכשיר מחובר לאינטרנט והאם ה-IP נכון.",
+      "invalid_api_key": "מפתח ה-API שסופק אינו חוקי או שמופע Mycodo לא הגיב כראוי. אנא בדוק את מפתח ה-API שלך וודא ש-Mycodo פועל."
+    },
+    "abort": {
+      "already_configured": "מופע Mycodo זה כבר מוגדר.",
+      "unknown_error": "אירעה שגיאה לא ידועה בעת הגדרת שילוב Mycodo."
+    }
+  }
+}

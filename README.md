@@ -49,6 +49,6 @@ Once you have the token, you can configure the integration in Home Assistant by 
 For more detailed instructions, refer to the documentation in this repository.
 
 ## Support
-If you encounter any issues or have questions, please open an issue in this repository or contact the maintainers.
+If you encounter any issues or have questions, please open an issue in this repository.
 
 ---

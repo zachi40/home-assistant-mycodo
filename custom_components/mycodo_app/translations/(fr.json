@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connecter à Mycodo",
+        "description": "Entrez les détails pour vous connecter à votre instance Mycodo.",
+        "data": {
+          "ip_address": "Adresse IP",
+          "api_key": "Clé API",
+          "use_https": "Utiliser HTTPS",
+          "update_interval": "Intervalle de mise à jour"
+        },
+        "description_placeholders": {
+          "ip_address": "L'adresse IP de votre instance Mycodo.",
+          "api_key": "La clé API pour s'authentifier avec Mycodo.",
+          "use_https": "Activez cette option pour utiliser HTTPS pour une connexion sécurisée. Désactivez pour HTTP.",
+          "update_interval": "Définissez la fréquence (en minutes) de mise à jour du capteur."
+        }
+      }
+    },
+    "error": {
+      "ip_not_reachable": "Impossible de se connecter à l'adresse IP fournie. Vérifiez si l'appareil est en ligne et si l'IP est correcte.",
+      "invalid_api_key": "La clé API fournie est invalide ou l'instance Mycodo n'a pas répondu correctement. Veuillez vérifier votre clé API et vous assurer que Mycodo est en cours d'exécution."
+    },
+    "abort": {
+      "already_configured": "Cette instance Mycodo est déjà configurée.",
+      "unknown_error": "Une erreur inconnue s'est produite lors de la configuration de l'intégration Mycodo."
+    }
+  }
+}

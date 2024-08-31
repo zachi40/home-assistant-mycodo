@@ -1,104 +1,87 @@
 import logging
-from homeassistant.helpers.entity import Entity
-from .const import DOMAIN
-from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT, TEMP_KELVIN
+import uuid
+from datetime import timedelta
+from enum import Enum
 
-# str(UnitOfTemperature.CELSIUS)
+from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
+from homeassistant.const import UnitOfTemperature
+from homeassistant.core import HomeAssistant
+from homeassistant.core import callback
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from .const import DOMAIN
+from .coordinator import MycodoApiCoordinator
+from .mycodo_entity import mycodoEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+class CustomSensorDeviceClass(Enum):
+    """Custom enum that combines standard and custom sensor device classes."""
+    # Include all standard SensorDeviceClass members
+    TEMPERATURE = SensorDeviceClass.TEMPERATURE.value
+    HUMIDITY = SensorDeviceClass.HUMIDITY.value
+    PRESSURE = SensorDeviceClass.PRESSURE.value
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+    # Add custom device classes
+    DEWPOINT = "dewpoint"
+    DIRECTION = "direction"
+    VAPOR_PRESSURE_DEFICIT = "vapor_pressure_deficit"
+
+    # Add more custom classes as needed
+
+    @classmethod
+    def from_string(cls, name: str):
+        """Get the enum member corresponding to a string, including standard and custom."""
+        # Attempt to get the member from the custom enum
+        try:
+            return cls[name.upper()]
+        except KeyError:
+            # If not found in custom, check the standard SensorDeviceClass
+            if name.upper() in SensorDeviceClass.__members__:
+                return SensorDeviceClass[name.upper()]
+            _LOGGER.debug(f"'{name}' is not a valid device class")
+            return name
+
+
+UNIT_MAP = {
+    "C": UnitOfTemperature.CELSIUS,
+    "F": UnitOfTemperature.FAHRENHEIT,
+    "K": UnitOfTemperature.KELVIN,
+}
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
     """Set up Mycodo sensors dynamically from a config entry."""
-    mycodo_client = hass.data[DOMAIN]["client"]
+    coordinator: MycodoApiCoordinator = hass.data[DOMAIN][entry.entry_id]
+    entities: list[SensorEntity] = []
 
-    # Fetch basic sensors data
-    sensors = await hass.async_add_executor_job(mycodo_client.get_sensors)
+    for sensor_dict in coordinator.data.get(Platform.SENSOR, []):
+        # Assuming each dict contains a single sensor_id -> sensor_data pair
+        sensor_id = sensor_dict.get("sensor_id")
+        sensor_data = sensor_dict.get("sensor_data")
 
-    if not sensors or "input settings" not in sensors:
-        _LOGGER.error("Failed to fetch sensors from Mycodo.")
-        return
+        if sensor_id and isinstance(sensor_data, dict):
+            entities.append(MycodoSensor(coordinator, sensor_id, sensor_data))
 
-    sensor_entities = []
-    input_settings = sensors.get("input settings", []) or []
-    for sensor in input_settings:
-        if sensor.get("is_activated"):
-            # Fetch detailed sensor information
-            details = await hass.async_add_executor_job(
-                mycodo_client.get_sensor_details, sensor["unique_id"]
-            )
-            if not details:
-                _LOGGER.error(
-                    f"Failed to fetch details for sensor {sensor['name']} with ID {sensor['unique_id']}"
-                )
-                continue
-
-            try:
-                # Attempt to extract necessary measurement details
-                for device in details["device measurements"]:
-                    # device_measurements = details["device measurements"][0]
-                    unit = device.get("unit", "")
-                    device_class = device.get("measurement", "")
-
-                    channel = device.get("channel", "")
-
-                    data = await hass.async_add_executor_job(
-                        mycodo_client.get_sensor_data,
-                        device.get("device_id"),
-                        device.get("unique_id"),
-                    )
-                    if data:
-                        state = data[1]
-                        if state is not None:
-                            state = "{:.2f}".format(float(state))
-                    else:
-                        _LOGGER.error(
-                            f"Failed to update sensor ID {sensor["unique_id"]} sensor"
-                        )
-
-                    sensor_entities.append(
-                        MycodoSensor(
-                            mycodo_client,
-                            sensor["name"],
-                            device.get("unique_id"),
-                            unit,
-                            device_class,
-                            channel,
-                            device.get("device_id"),
-                            state,
-                        )
-                    )
-            except (IndexError, KeyError, TypeError) as e:
-                _LOGGER.error(f"Error processing sensor {sensor['name']} details: {e}")
-                continue
-
-    async_add_entities(sensor_entities)
+    async_add_entities(entities, True)
 
 
-class MycodoSensor(Entity):
-    """Representation of a Sensor from Mycodo."""
-
-    def __init__(
-        self,
-        mycodo_client,
-        name,
-        unique_id,
-        unit_of_measurement,
-        device_class,
-        channel,
-        device_id,
-        state,
-    ):
+class MycodoSensor(mycodoEntity, SensorEntity):
+    def __init__(self, coordinator: MycodoApiCoordinator, sensor_id: str, sensor_data: dict):
         """Initialize the sensor."""
-        self.mycodo_client = mycodo_client
-        self._name = f"Mycodo {name} {device_class}"
-        self._unique_id = unique_id
-        self._unit_of_measurement = unit_of_measurement
-        self._unit = unit_of_measurement
-        self._channel = channel
-        self._device_class = device_class
-        self._device_id = device_id
-        self._state = state
+        super().__init__(coordinator)
+        self._coordinator = coordinator
+
+        device_class_str = sensor_data.get("device_class", "temperature")
+        self._device_class = CustomSensorDeviceClass.from_string(device_class_str)
+        self._unit_of_measurement = sensor_data.get("unit", "")
+        self._name = f"Mycodo_{sensor_data.get("name", "sensor")} {device_class_str}"
+        self._sensor_id = sensor_id
+        self._state = None
+        self._unique_id = sensor_data.get("unique_id", str(uuid.uuid4()))
+        self._channel = sensor_data.get("channel")
+        self._device_id = sensor_data.get("device_id")
 
     @property
     def name(self):
@@ -106,66 +89,47 @@ class MycodoSensor(Entity):
         return self._name
 
     @property
-    def unique_id(self):
-        """Return the unique ID of the sensor."""
-        return self._unique_id
-
-    @property
     def state(self):
         """Return the state of the sensor."""
         return self._state
 
     @property
+    def unique_id(self):
+        """Return the unique ID of the sensor."""
+        return self._unique_id
+
+    @property
     def unit_of_measurement(self):
-        """Return the unit of measurement."""
-        unit = self._unit_of_measurement
-        if unit == "C":
-            return TEMP_CELSIUS
-        elif unit == "F":
-            return TEMP_FAHRENHEIT
-        elif unit == "K":
-            return TEMP_KELVIN
-        elif unit == "percent":
-            return "%"
-        elif unit == "m_s":
-            return "m/s"
-        else:
-            return unit
+        """Return the unit of measurement of this sensor, if any."""
+        return self._unit_of_measurement
 
     @property
-    def unit(self):
-        """Return the unit of the sensor."""
-        return self._unit
+    def should_poll(self):
+        return False
 
     @property
-    def device_class(self):
-        """Return the device class of the sensor."""
-        return self._device_class
-
-    @property
-    def channel(self):
-        """Return the device channel of the sensor."""
-        return self._channel
-
-    @property
-    def channel(self):
-        """Return the device_id of the sensor."""
-        return self._device_id
+    def icon(self):
+        mapping = {
+            'C': "mdi:temperature-celsius",
+            'F': "mdi:temperature-fahrenheit",
+            'K': "mdi:temperature-kelvin",
+            'Pa': "mdi:car-brake-low-pressure",
+            'm_s': "mdi:speedometer",
+            'percent': "mdi:percent",
+            "bearing": "mdi:cog"
+        }
+        return mapping.get(self.unit_of_measurement, "mdi:eye")
 
     async def async_update(self):
-        """Fetch new state data for the sensor."""
-        data = await self.hass.async_add_executor_job(
-            self.mycodo_client.get_sensor_data, self._device_id, self._unique_id
-        )
-        if data:
-            self._state = data[1]
-            if self._state is not None:
-                self._state = "{:.2f}".format(float(self._state))
-            else:
-                _LOGGER.error(
-                    f"No data found for sensor '{self._name}' with ID {self._unique_id}"
-                )
-        else:
-            _LOGGER.error(
-                f"Failed to update sensor '{self._name}' with ID {self._unique_id}"
-            )
+        """Update the sensor data."""
+        await self._coordinator.async_request_refresh()
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        latest_data = next((sensor for sensor in self._coordinator.data.get(Platform.SENSOR, []) if
+                            sensor.get('sensor_id') == self._sensor_id), None)
+        if latest_data:
+            self._state = latest_data.get('sensor_data', "").get('state', 0.0)
+            _LOGGER.debug(f"Updated sensor {self._sensor_id} state to {self._state}")
+        self.async_write_ha_state()
