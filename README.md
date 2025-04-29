@@ -1,5 +1,28 @@
 # Mycodo App Home Assistant Integration
 
+### ⚠️ Known Issue in Version 8.16.1
+
+> **Important:** There is a known bug in version `8.16.1` that prevents the system from retrieving information about existing inputs. **Do not upgrade to this version** if your system is already working correctly.
+
+#### ✅ Temporary Fix
+
+If you've already upgraded and are experiencing this issue, follow the steps below to resolve it:
+
+1. Navigate to the Mycodo installation directory (default path: `/opt/Mycodo/`).
+2. Open the `mycodo_flask` folder (default path: `/opt/Mycodo/mycodo/mycodo_flask/`).
+3. Locate the `input.py` file inside the `API` subdirectory.
+4. Modify line 11 from:
+    ```python
+    from mycodo.databases.models import DeviceMeasurements
+    ```
+    to:
+    ```python
+    from mycodo.databases.models.measurement import DeviceMeasurements
+    ```
+
+This will resolve the issue with input detection in version 8.16.1.
+
+
 ## Overview
 This integration allows you to connect and control your Mycodo App with Home Assistant.
 
