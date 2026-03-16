@@ -1,9 +1,5 @@
 # Mycodo App Home Assistant Integration
 
-### ⚠️ Known Issue in Version 8.16.1
-
-> **Important:** There is a known bug in version `8.16.1` that prevents the system from retrieving information about existing inputs. **Do not upgrade to this version** if your system is already working correctly.
-
 ## Overview
 This integration allows you to connect and control your Mycodo App with Home Assistant.
 
