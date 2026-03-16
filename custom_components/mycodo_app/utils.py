@@ -50,7 +50,6 @@ class MycodoClient:
         trace_config.on_request_chunk_sent.append(on_request_chunk_sent_debug)
         trace_config.on_request_end.append(on_request_end_debug)
         trace_config.freeze()
-        session.trace_configs.append(trace_config)
 
         if not session:
             session = aiohttp.ClientSession(trace_configs=[trace_config])
@@ -104,26 +103,27 @@ class MycodoClient:
         return await self.make_request("api/inputs")
 
     async def get_sensor_details(self, sensor_id):
-        """Get detailed information for a specific sensor from Mycodo."""
-        _LOGGER.debug(f"Get detailed information for {sensor_id} sensor from Mycodo.")
-        return await self.make_request(f"api/inputs/{sensor_id}")
+        """Get device measurements for a specific sensor from Mycodo.
+        Note: api/inputs/{id} is broken in current Mycodo (DeviceMeasurements.conversion AttributeError).
+        Use settings/device_measurements/by_device_id instead.
+        """
+        _LOGGER.debug(f"Get device measurements for {sensor_id} from Mycodo.")
+        return await self.make_request(f"api/settings/device_measurements/by_device_id/{sensor_id}")
 
     async def get_sensor_data(self, sensor_device_id, unique_id):
         """Get the latest data for a specific sensor from Mycodo."""
         _LOGGER.debug(f"Get the latest data for a {sensor_device_id} sensor from Mycodo.")
 
-        NOT_value = True
         count = 0
-        while NOT_value:
+        while count < 3:
             response = await self.make_request(f"last/{sensor_device_id}/input/{unique_id}/30")
-            if count == 3:
-                return None
-            # 204 - no data
-            elif response == "":
+            # Empty string = 204 no data; None = request error
+            if not response:
                 await self.make_request(f"api/inputs/{sensor_device_id}/force-measurement", method="post")
                 count += 1
             else:
                 return json.loads(response)
+        return None
 
 
     async def get_switches(self):

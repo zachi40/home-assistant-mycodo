@@ -72,7 +72,11 @@ class MycodoApiCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
                         continue
 
                     # Attempt to extract necessary measurement details
-                    for device in sensor_details["device measurements"]:
+                    # Key changed: api/inputs/{id} is broken; now uses settings/device_measurements
+                    # which returns "device measurement settings" instead of "device measurements"
+                    for device in sensor_details.get("device measurement settings", []):
+                        if not device.get("is_enabled"):
+                            continue
                         # device_measurements = details["device measurements"][0]
                         unit = device.get("unit", "")
                         device_class = device.get("measurement", "")

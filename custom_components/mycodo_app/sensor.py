@@ -1,12 +1,16 @@
 import logging
 import uuid
-from datetime import timedelta
 from enum import Enum
 
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import (
+    PERCENTAGE,
+    Platform,
+    UnitOfPressure,
+    UnitOfSpeed,
+    UnitOfTemperature,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.core import callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -48,6 +52,9 @@ UNIT_MAP = {
     "C": UnitOfTemperature.CELSIUS,
     "F": UnitOfTemperature.FAHRENHEIT,
     "K": UnitOfTemperature.KELVIN,
+    "percent": PERCENTAGE,
+    "Pa": UnitOfPressure.PA,
+    "m_s": UnitOfSpeed.METERS_PER_SECOND,
 }
 
 
@@ -89,7 +96,7 @@ class MycodoSensor(mycodoEntity, SensorEntity):
         return self._name
 
     @property
-    def state(self):
+    def native_value(self):
         """Return the state of the sensor."""
         return self._state
 
@@ -99,9 +106,9 @@ class MycodoSensor(mycodoEntity, SensorEntity):
         return self._unique_id
 
     @property
-    def unit_of_measurement(self):
+    def native_unit_of_measurement(self):
         """Return the unit of measurement of this sensor, if any."""
-        return self._unit_of_measurement
+        return UNIT_MAP.get(self._unit_of_measurement, self._unit_of_measurement)
 
     @property
     def should_poll(self):
@@ -118,7 +125,7 @@ class MycodoSensor(mycodoEntity, SensorEntity):
             'percent': "mdi:percent",
             "bearing": "mdi:cog"
         }
-        return mapping.get(self.unit_of_measurement, "mdi:eye")
+        return mapping.get(self._unit_of_measurement, "mdi:eye")
 
     async def async_update(self):
         """Update the sensor data."""
